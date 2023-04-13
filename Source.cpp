@@ -364,7 +364,29 @@ void BSTsearchElement(BST* root, long s) {
 
 }
 
+void BSTsearchElement(Node* root, long s) {
+    if (!root)
+        return;
+    if (root->key == s)
+    {
+        // cout << "found " << s << endl;
+        return;
+    }
+    if (s < root->key) {
+        BSTsearchElement(root->left, s);
+    }
+    else if (s > root->key) { BSTsearchElement(root->right, s); }
+
+    return;
+
+}
 void BSTsearchList(BST* b, vector<long> num) {
+    for (long i = 0; i < num.size(); i++) {
+        BSTsearchElement(b, num[i]);
+    }
+}
+
+void BSTsearchList(Node* b, vector<long> num) {
     for (long i = 0; i < num.size(); i++) {
         BSTsearchElement(b, num[i]);
     }
@@ -372,9 +394,9 @@ void BSTsearchList(BST* b, vector<long> num) {
 
 
 
-void saveToTXT(vector<long> objects, vector<double>heightBST, vector<long>heightAVL) {
+void saveHeightsToTXT(vector<long> objects, vector<double>heightBST, vector<long>heightAVL) {
     fstream file;
-    file.open("data2.txt");
+    file.open("data3.txt");
     if (file.good())
     {
         file << "NR\tobjects\theightBST\theightAVL\n";
@@ -392,13 +414,33 @@ void saveToTXT(vector<long> objects, vector<double>heightBST, vector<long>height
     }
 }
 
+void saveTimesToTXT(vector<long> objects, vector<long> timesCreateBST, vector<long> timesCreateAVL, vector<long> timesSearchBST, vector<long> timesSearchAVL) {
+    fstream file;
+    file.open("data4_BST_and_AVL.txt");
+    if (file.good())
+    {
+        file << "NR\tobjects\tCreateBST\tCreateAVL\tSearchBST\tSearchAVL\tSummaryBST\ttSummaryAVL\n";
+        for (int i = 0; i < objects.size(); i++)
+        {
+            file << i + 1 << "\t" << objects[i] << "\t" << timesCreateBST[i] << "\t" << timesCreateAVL[i] << "\t" << timesSearchBST[i] << "\t" << timesSearchAVL[i] << "\t" << timesCreateBST[i] + timesSearchBST[i] << "\t" << timesCreateAVL[i] + timesSearchAVL[i] <<"\n";
+        }
+        file.close();
+    }
+    else
+    {
+        file.close();
+        cout << "Not good file\n";
+        return;
+    }
+}
+
 int main() {
     
     srand(time(NULL));
 
-    long numOfStartElements = 1000;
-    long numOfEndElements = 10000;
-    long step = 100;
+    long numOfStartElements = 10;
+    long numOfEndElements = 1000;
+    long step = 10;
     long numOfReps = (numOfEndElements - numOfStartElements) / step;
     cout << "num of reps: " << numOfReps + 1 << endl;
 
@@ -407,8 +449,16 @@ int main() {
     vector<double> heightBST;
     vector<long> heightAVL;
 
+    vector<long> timesCreateBST;
+    vector<long> timesCreateAVL;
+    
+    vector<long> timesSearchBST;
+    vector<long> timesSearchAVL;
+
     vector <long> num;
-    double tempheight = 0;
+
+    long time_taken = 0;
+    //double tempheight = 0;
 
     for (long i = 0; i <= numOfReps; i++)
     {
@@ -416,26 +466,54 @@ int main() {
         
         numberOfObjects.push_back(numOfStartElements);
         //cout << "------------ creating BST --------" << endl;
-        for (int i = 0; i < 5; i++)
-        {
+        //for (int i = 0; i < 5; i++)
+        //{
             fillVector(num, numOfStartElements, numOfEndElements);
+
+            // ------ creating BST -----------
+            auto start = chrono::steady_clock::now();
             BST* BSTroot = NULL;
             BSTroot = BSTinsert(BSTroot, num[0]);
             BSTroot = makeBSTFromVector(BSTroot, num);
-            tempheight += double(BST::max_height);
-            delete BSTroot;
-        }
+            auto end = chrono::steady_clock::now();
+            time_taken = chrono::duration_cast<chrono::microseconds>(end - start).count();
+            timesCreateBST.push_back(time_taken);
+            //tempheight += double(BST::max_height);
+            // ------- searching BST ----------
+             start = chrono::steady_clock::now();
+            BSTsearchList(BSTroot, num);
+             end = chrono::steady_clock::now();
+            time_taken = chrono::duration_cast<chrono::microseconds>(end - start).count();
+
+            timesSearchBST.push_back(time_taken);
+            //delete BSTroot;
+        //}
         
 
-        tempheight /= 5;
-        heightBST.push_back(tempheight);
-        tempheight = 0;
+        //tempheight /= 5;
+        //heightBST.push_back(tempheight);
+        heightBST.push_back(BST::max_height);
+        delete BSTroot;
+        //tempheight = 0;
 
 
 
         //cout << "------------ creating AVL --------" << endl;
+         start = chrono::steady_clock::now();
         Node* root = NULL;
         root = makeAVLFromVector(root, num);
+         end = chrono::steady_clock::now();
+        time_taken = chrono::duration_cast<chrono::microseconds>(end - start).count();
+        timesCreateAVL.push_back(time_taken);
+
+        // ---------- searching AVL ---------
+         start = chrono::steady_clock::now();
+        BSTsearchList(root, num);
+         end = chrono::steady_clock::now();
+        time_taken = chrono::duration_cast<chrono::microseconds>(end - start).count();
+
+        timesSearchAVL.push_back(time_taken);
+
         heightAVL.push_back(root->height);
         //cout << "root height" << root->height << endl;
 
@@ -444,11 +522,23 @@ int main() {
 
         numOfStartElements += step;
     }
-    
+    cout << "\n-----heightBST-----\n";
     printVector(heightBST);
+    cout << "\n-----heightAVL-----\n";
     printVector(heightAVL);
+    cout << "\n-----CreationBST-----\n";
+    printVector(timesCreateBST);
 
-    saveToTXT(numberOfObjects, heightBST, heightAVL);
+    cout << "\n-----CreationAVL-----\n";
+    printVector(timesCreateAVL);
+    cout << "\n-----SearchBST-----\n";
+    printVector(timesSearchBST);
+    cout << "\n-----SearchAVL-----\n";
+    printVector(timesSearchAVL);
+
+
+    saveTimesToTXT(numberOfObjects, timesCreateBST, timesCreateAVL, timesSearchBST, timesSearchAVL);
+    //saveHeightsToTXT(numberOfObjects, heightBST, heightAVL);
    
 
 
