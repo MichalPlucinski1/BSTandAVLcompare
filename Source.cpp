@@ -27,7 +27,15 @@ void fillVector(vector<long>& numbers, long size, long max_size)
     }
 }
 
-void prlongVector(vector<long>& numbers) {
+void printVector(vector<long>& numbers) {
+    cout << "------------vector:--------------" << endl;
+    for (int i = 0; i < numbers.size(); i++) {
+        cout << "vec[" << i << "]= " << numbers[i] << endl;
+    }
+}
+
+void printVector(vector<double>& numbers) {
+    cout << "------------vector:--------------" << endl;
     for (int i = 0; i < numbers.size(); i++) {
         cout << "vec[" << i << "]= " << numbers[i] << endl;
     }
@@ -42,6 +50,16 @@ public:
     Node* left;
     Node* right;
     int height;
+
+    ~Node() {
+
+        if (right != NULL) {
+            delete this->right;
+        }
+        if (left != NULL) {
+            delete this->left;
+        }
+    }
 };
 
 int max(int a, int b);
@@ -64,6 +82,9 @@ Node* newNode(int key) {
     node->left = NULL;
     node->right = NULL;
     node->height = 1;
+
+
+
     return (node);
 }
 
@@ -253,12 +274,22 @@ public:
             height = 0;
             left = right = NULL;
         }
+
+        ~BST() {
+
+            if (right != NULL) {
+                delete right;
+            }
+            if (left != NULL) {
+                delete left;
+            }
+        }
 };
 long BST::max_height = 0;
 
 BST* BSTinsert(BST* root, long value, long _height = 0)
 {
-    cout << "h: " << _height << " mh: " <<BST::max_height << endl;
+    //cout << "h: " << _height << " mh: " <<BST::max_height << endl;
     if (_height > BST::max_height)
         BST::max_height = _height;
 
@@ -298,7 +329,7 @@ BST* makeBSTFromVector(BST* root, vector<long>& num) {
     root = BSTinsert(root, num[0]);
     for (long i = 1; i < num.size(); i++) {
         root = BSTinsert(root, num[i]);
-        cout << "inserting " << num[i] << endl;
+        //cout << "inserting " << num[i] << endl;
     }
 
     return root;
@@ -310,28 +341,115 @@ Node* makeAVLFromVector(Node * root, vector<long>& num) {
     //root = b.Insert(root, num[0]);  
     for (long i = 0; i < num.size(); i++) {
         root = insertNode(root, num[i]);
-        cout << "inserting " << num[i] << endl;
+        //cout << "inserting " << num[i] << endl;
     }
 
     return root;
 
 }
+void BSTsearchElement(BST* root, long s) {
+    if (!root)
+        return;
+    if (root->data == s)
+    {
+        // cout << "found " << s << endl;
+        return;
+    }
+    if (s < root->data) {
+        BSTsearchElement(root->left, s);
+    }
+    else if (s > root->data) { BSTsearchElement(root->right, s); }
+
+    return;
+
+}
+
+void BSTsearchList(BST* b, vector<long> num) {
+    for (long i = 0; i < num.size(); i++) {
+        BSTsearchElement(b, num[i]);
+    }
+}
+
+
+
+void saveToTXT(vector<long> objects, vector<double>heightBST, vector<long>heightAVL) {
+    fstream file;
+    file.open("data2.txt");
+    if (file.good())
+    {
+        file << "NR\tobjects\theightBST\theightAVL\n";
+        for (int i = 0; i < objects.size(); i++)
+        {
+            file << i + 1 << "\t" << objects[i] << "\t" << heightBST[i] << "\t" << heightAVL[i] << "\n";
+        }
+        file.close();
+    }
+    else
+    {
+        file.close();
+        cout << "Not good file\n";
+        return;
+    }
+}
+
 int main() {
     
     srand(time(NULL));
+
+    long numOfStartElements = 1000;
+    long numOfEndElements = 10000;
+    long step = 100;
+    long numOfReps = (numOfEndElements - numOfStartElements) / step;
+    cout << "num of reps: " << numOfReps + 1 << endl;
+
+    vector<long> numberOfObjects;
+
+    vector<double> heightBST;
+    vector<long> heightAVL;
+
     vector <long> num;
-    fillVector(num, 11, 10);
+    double tempheight = 0;
+
+    for (long i = 0; i <= numOfReps; i++)
+    {
+        
+        
+        numberOfObjects.push_back(numOfStartElements);
+        //cout << "------------ creating BST --------" << endl;
+        for (int i = 0; i < 5; i++)
+        {
+            fillVector(num, numOfStartElements, numOfEndElements);
+            BST* BSTroot = NULL;
+            BSTroot = BSTinsert(BSTroot, num[0]);
+            BSTroot = makeBSTFromVector(BSTroot, num);
+            tempheight += double(BST::max_height);
+            delete BSTroot;
+        }
+        
+
+        tempheight /= 5;
+        heightBST.push_back(tempheight);
+        tempheight = 0;
 
 
-    prlongVector(num);
 
+        //cout << "------------ creating AVL --------" << endl;
+        Node* root = NULL;
+        root = makeAVLFromVector(root, num);
+        heightAVL.push_back(root->height);
+        //cout << "root height" << root->height << endl;
 
-    BST* BSTroot = NULL;
-    BSTroot = BSTinsert(BSTroot, num[0]);
-    BSTroot = makeBSTFromVector(BSTroot, num);
-    inOrder(BSTroot);
+        
+        delete root;
 
-    cout << "wysokosc: " << BST::max_height;
+        numOfStartElements += step;
+    }
+    
+    printVector(heightBST);
+    printVector(heightAVL);
+
+    saveToTXT(numberOfObjects, heightBST, heightAVL);
+   
 
 
     /*Node* root = NULL;
