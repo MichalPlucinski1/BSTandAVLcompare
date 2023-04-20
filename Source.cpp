@@ -255,19 +255,15 @@ class BST {
 public:
     long data, height;
     BST* left, * right;
+
     static long max_height;
 
-    BST(long value, long _height) {
+    BST(long value, long _height = 0) {
         data = value;
         height = _height;
         left = right = NULL;
     }
 
-    BST(long value) {
-        data = value;
-        height = 0;
-        left = right = NULL;
-    }
 
         BST() {
             data = 0;
@@ -294,7 +290,7 @@ BST* BSTinsert(BST* root, long value, long _height = 0)
         BST::max_height = _height;
 
     if (!root) {
-        BST *temp = new BST(value);
+        BST *temp = new BST(value, _height+1);
         
         // Insert the first node, if root is NULL.
         return temp;
@@ -309,7 +305,7 @@ BST* BSTinsert(BST* root, long value, long _height = 0)
 
     // Return 'root' node, after insertion.
     //root->height = _height;
-    
+    root->height = _height;
     return root;
 }
 
@@ -319,7 +315,17 @@ void inOrder(BST* root)
         return;
     }
     inOrder(root->left);
-    cout << root->data << endl;
+    cout << root->data <<" h: " << root->height << endl;
+    inOrder(root->right);
+}
+
+void inOrder(Node* root)
+{
+    if (!root) {
+        return;
+    }
+    inOrder(root->left);
+    cout << root->key << " h: " << root->height << endl;
     inOrder(root->right);
 }
 
@@ -392,7 +398,47 @@ void BSTsearchList(Node* b, vector<long> num) {
     }
 }
 
+void BSTSeeChild(BST* b) {
+    if (!b)
+        return;
+    
+    if ((b->left && b->right)) {
+        cout << "curr: " << b->data << " h: " << b->height << " l: " << b->left->data << " r: " << b->right->data << endl;
+    }
+    if (!b->left && b->right) {
+        cout << "curr: " << b->data << " h: " << b->height << " l: NULL " << " r: " << b->right->data << endl;
+    }
+    if (b->left && !b->right) {
+        cout << "curr: " << b->data << " h: " << b->height << " l: " << b->left->data << " r: NULL" << endl;
+    }
+    if (!b->left && !b->right) {
+        cout << "curr: " << b->data << " h: " << b->height << " l: NULL " << " r: NULL" << endl;
+    }
+    BSTSeeChild(b->left);
+    BSTSeeChild(b->right);
+    return;
+}
 
+void AVLSeeChild(Node* b) {
+    if (!b)
+        return;
+
+    if ((b->left && b->right)) {
+        cout << "curr: " << b->key << " childrens: " << b->height << " l: " << b->left->key << " r: " << b->right->key << endl;
+    }
+    if (!b->left && b->right) {
+        cout << "curr: " << b->key << " childrens: " << b->height << " l: NULL " << " r: " << b->right->key << endl;
+    }
+    if (b->left && !b->right) {
+        cout << "curr: " << b->key << " childrens: " << b->height << " l: " << b->left->key << " r: NULL" << endl;
+    }
+    if (!b->left && !b->right) {
+        cout << "curr: " << b->key << " childrens: " << b->height << " l: NULL " << " r: NULL" << endl;
+    }
+    AVLSeeChild(b->left);
+    AVLSeeChild(b->right);
+    return;
+}
 
 void saveHeightsToTXT(vector<long> objects, vector<double>heightBST, vector<long>heightAVL) {
     fstream file;
@@ -439,8 +485,8 @@ int main() {
     srand(time(NULL));
 
     long numOfStartElements = 10;
-    long numOfEndElements = 1000;
-    long step = 10;
+    long numOfEndElements = 10;
+    long step = 1;
     long numOfReps = (numOfEndElements - numOfStartElements) / step;
     cout << "num of reps: " << numOfReps + 1 << endl;
 
@@ -460,12 +506,13 @@ int main() {
     long time_taken = 0;
     //double tempheight = 0;
 
+
     for (long i = 0; i <= numOfReps; i++)
     {
         
         
         numberOfObjects.push_back(numOfStartElements);
-        //cout << "------------ creating BST --------" << endl;
+        cout << "------------  BST --------" << endl;
         //for (int i = 0; i < 5; i++)
         //{
             fillVector(num, numOfStartElements, numOfEndElements);
@@ -486,6 +533,9 @@ int main() {
             time_taken = chrono::duration_cast<chrono::microseconds>(end - start).count();
 
             timesSearchBST.push_back(time_taken);
+            inOrder(BSTroot);
+            cout << "BST see child\n";
+            BSTSeeChild(BSTroot);
             //delete BSTroot;
         //}
         
@@ -498,7 +548,7 @@ int main() {
 
 
 
-        //cout << "------------ creating AVL --------" << endl;
+        cout << "------------  AVL --------" << endl;
          start = chrono::steady_clock::now();
         Node* root = NULL;
         root = makeAVLFromVector(root, num);
@@ -516,8 +566,9 @@ int main() {
 
         heightAVL.push_back(root->height);
         //cout << "root height" << root->height << endl;
-
-        
+        inOrder(root);
+        cout << "AVL see child\n";
+        AVLSeeChild(root);
         delete root;
 
         numOfStartElements += step;
@@ -525,7 +576,9 @@ int main() {
     cout << "\n-----heightBST-----\n";
     printVector(heightBST);
     cout << "\n-----heightAVL-----\n";
-    printVector(heightAVL);
+    printVector(heightAVL);\
+
+    /*
     cout << "\n-----CreationBST-----\n";
     printVector(timesCreateBST);
 
@@ -535,9 +588,10 @@ int main() {
     printVector(timesSearchBST);
     cout << "\n-----SearchAVL-----\n";
     printVector(timesSearchAVL);
+    */
 
 
-    saveTimesToTXT(numberOfObjects, timesCreateBST, timesCreateAVL, timesSearchBST, timesSearchAVL);
+    //saveTimesToTXT(numberOfObjects, timesCreateBST, timesCreateAVL, timesSearchBST, timesSearchAVL);
     //saveHeightsToTXT(numberOfObjects, heightBST, heightAVL);
    
 
